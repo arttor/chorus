@@ -219,19 +219,32 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		_, err = svc.GetUserReplicationPolicies(ctx, "a")
 		r.NoError(err)
 
-		err = svc.AddBucketReplicationPolicy(ctx, "", "a", "a", "a", nil, tasks.Priority3, nil)
+		invalidReplID1 := ReplicationID{User: "", Bucket: "a", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID1, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "", "a", "a", nil, tasks.Priority3, nil)
+		
+		invalidReplID2 := ReplicationID{User: "a", Bucket: "", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID2, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "", "a", nil, tasks.Priority3, nil)
+		
+		invalidReplID3 := ReplicationID{User: "a", Bucket: "a", From: "", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID3, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "", nil, tasks.Priority3, nil)
+		
+		invalidReplID4 := ReplicationID{User: "a", Bucket: "a", From: "a", To: ""}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID4, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "a", nil, tasks.Priority(69), nil)
+		
+		invalidPriorityReplID := ReplicationID{User: "a", Bucket: "a", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidPriorityReplID, tasks.Priority(69), nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "a", nil, tasks.Priority3, nil)
+		
+		sameFromToReplID := ReplicationID{User: "a", Bucket: "a", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, sameFromToReplID, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "b", nil, tasks.Priority3, nil)
+		
+		validReplID := ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"}
+		err = svc.AddBucketReplicationPolicy(ctx, validReplID, tasks.Priority3, nil)
 		r.NoError(err)
 
 		_, err = svc.GetBucketReplicationPolicies(ctx, "", "")

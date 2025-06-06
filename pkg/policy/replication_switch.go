@@ -219,7 +219,7 @@ func (s *policySvc) SetDowntimeReplicationSwitch(ctx context.Context, replID Rep
 
 	// add new downtime switch
 	// validate corresponding replication state:
-	policy, err := s.GetReplicationPolicyInfo(ctx, replID.User, replID.Bucket, replID.From, replID.To, replID.ToBucket)
+	policy, err := s.GetReplicationPolicyInfo(ctx, replID)
 	if err != nil {
 		return fmt.Errorf("unable to get replication policy: %w", err)
 	}
@@ -324,7 +324,7 @@ func (s *policySvc) AddZeroDowntimeReplicationSwitch(ctx context.Context, replID
 		return dom.ErrAlreadyExists
 	}
 	// validate corresponding replication state:
-	policy, err := s.GetReplicationPolicyInfo(ctx, replID.User, replID.Bucket, replID.From, replID.To, replID.ToBucket)
+	policy, err := s.GetReplicationPolicyInfo(ctx, replID)
 	if err != nil {
 		return fmt.Errorf("unable to get replication policy: %w", err)
 	}
