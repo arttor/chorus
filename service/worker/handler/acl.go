@@ -32,6 +32,7 @@ import (
 	"github.com/clyso/chorus/pkg/lock"
 	"github.com/clyso/chorus/pkg/log"
 	"github.com/clyso/chorus/pkg/meta"
+	"github.com/clyso/chorus/pkg/policy"
 	"github.com/clyso/chorus/pkg/s3client"
 	"github.com/clyso/chorus/pkg/tasks"
 )
@@ -43,7 +44,8 @@ func (s *svc) HandleBucketACL(ctx context.Context, t *asynq.Task) error {
 	}
 	ctx = log.WithBucket(ctx, p.Bucket)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -70,7 +72,7 @@ func (s *svc) HandleBucketACL(ctx context.Context, t *asynq.Task) error {
 		return err
 	}
 
-	incErr := s.policySvc.IncReplEventsDone(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, p.CreatedAt)
+	incErr := s.policySvc.IncReplEventsDone(ctx, replID, p.CreatedAt)
 	if incErr != nil {
 		zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 	}
@@ -85,7 +87,8 @@ func (s *svc) HandleObjectACL(ctx context.Context, t *asynq.Task) error {
 	ctx = log.WithBucket(ctx, p.Object.Bucket)
 	ctx = log.WithObjName(ctx, p.Object.Name)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Object.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Object.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -113,7 +116,7 @@ func (s *svc) HandleObjectACL(ctx context.Context, t *asynq.Task) error {
 		return err
 	}
 
-	incErr := s.policySvc.IncReplEventsDone(ctx, xctx.GetUser(ctx), p.Object.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, p.CreatedAt)
+	incErr := s.policySvc.IncReplEventsDone(ctx, replID, p.CreatedAt)
 	if incErr != nil {
 		zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 	}

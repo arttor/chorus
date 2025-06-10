@@ -108,7 +108,7 @@ func (s *svc) Replicate(ctx context.Context, task tasks.SyncTask) error {
 			if err != nil {
 				return err
 			}
-			incErr := s.policySvc.IncReplEvents(ctx, user, bucket, t.GetFrom(), t.GetToStorage(), t.GetToBucket(), t.GetDate())
+			incErr := s.policySvc.IncReplEvents(ctx, policy.ReplicationID{User: user, Bucket: bucket, From: t.GetFrom(), To: t.GetToStorage(), ToBucket: t.GetToBucket()}, t.GetDate())
 			if incErr != nil {
 				zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 			}
@@ -128,7 +128,7 @@ func (s *svc) Replicate(ctx context.Context, task tasks.SyncTask) error {
 			if err != nil {
 				return err
 			}
-			incErr := s.policySvc.IncReplEvents(ctx, user, bucket, t.GetFrom(), t.GetToStorage(), t.GetToBucket(), t.GetDate())
+			incErr := s.policySvc.IncReplEvents(ctx, policy.ReplicationID{User: user, Bucket: bucket, From: t.GetFrom(), To: t.GetToStorage(), ToBucket: t.GetToBucket()}, t.GetDate())
 			if incErr != nil {
 				zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 			}
@@ -148,7 +148,7 @@ func (s *svc) Replicate(ctx context.Context, task tasks.SyncTask) error {
 			if err != nil {
 				return err
 			}
-			incErr := s.policySvc.IncReplEvents(ctx, user, bucket, t.GetFrom(), t.GetToStorage(), t.GetToBucket(), t.GetDate())
+			incErr := s.policySvc.IncReplEvents(ctx, policy.ReplicationID{User: user, Bucket: bucket, From: t.GetFrom(), To: t.GetToStorage(), ToBucket: t.GetToBucket()}, t.GetDate())
 			if incErr != nil {
 				zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 			}
@@ -172,7 +172,7 @@ func (s *svc) Replicate(ctx context.Context, task tasks.SyncTask) error {
 			if err != nil {
 				return err
 			}
-			incErr := s.policySvc.IncReplEvents(ctx, user, bucket, t.GetFrom(), t.GetToStorage(), t.GetToBucket(), t.GetDate())
+			incErr := s.policySvc.IncReplEvents(ctx, policy.ReplicationID{User: user, Bucket: bucket, From: t.GetFrom(), To: t.GetToStorage(), ToBucket: t.GetToBucket()}, t.GetDate())
 			if incErr != nil {
 				zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 			}
@@ -192,7 +192,7 @@ func (s *svc) Replicate(ctx context.Context, task tasks.SyncTask) error {
 			if err != nil {
 				return err
 			}
-			incErr := s.policySvc.IncReplEvents(ctx, user, bucket, t.GetFrom(), t.GetToStorage(), t.GetToBucket(), t.GetDate())
+			incErr := s.policySvc.IncReplEvents(ctx, policy.ReplicationID{User: user, Bucket: bucket, From: t.GetFrom(), To: t.GetToStorage(), ToBucket: t.GetToBucket()}, t.GetDate())
 			if incErr != nil {
 				zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 			}
@@ -212,7 +212,7 @@ func (s *svc) Replicate(ctx context.Context, task tasks.SyncTask) error {
 			if err != nil {
 				return err
 			}
-			incErr := s.policySvc.IncReplEvents(ctx, user, bucket, t.GetFrom(), t.GetToStorage(), t.GetToBucket(), t.GetDate())
+			incErr := s.policySvc.IncReplEvents(ctx, policy.ReplicationID{User: user, Bucket: bucket, From: t.GetFrom(), To: t.GetToStorage(), ToBucket: t.GetToBucket()}, t.GetDate())
 			if incErr != nil {
 				zerolog.Ctx(ctx).Err(incErr).Msg("unable to inc repl event counter")
 			}
@@ -290,7 +290,8 @@ func (s *svc) getReplicationPolicy(ctx context.Context, task tasks.SyncTask) (po
 	}
 	for to, priority := range userPolicy.To {
 		toStorage, toBucket := to.Parse()
-		err = s.policySvc.AddBucketReplicationPolicy(ctx, user, bucket, userPolicy.From, toStorage, toBucket, priority, nil)
+		replID := policy.ReplicationID{User: user, Bucket: bucket, From: userPolicy.From, To: toStorage, ToBucket: toBucket}
+		err = s.policySvc.AddBucketReplicationPolicy(ctx, replID, priority, nil)
 		if err != nil {
 			if errors.Is(err, dom.ErrAlreadyExists) {
 				continue

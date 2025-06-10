@@ -61,7 +61,8 @@ func (s *svc) HandleZeroDowntimeReplicationSwitch(ctx context.Context, t *asynq.
 
 func (s *svc) handleZeroDowntimeReplicationSwitch(ctx context.Context, policyID policy.ReplicationID, p tasks.ZeroDowntimeReplicationSwitchPayload) error {
 	// get latest replication and switch state and execute switch state machine:
-	replStatus, err := s.policySvc.GetReplicationPolicyInfo(ctx, p.User, p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: p.User, Bucket: p.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	replStatus, err := s.policySvc.GetReplicationPolicyInfo(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop switch with downtime task: replication metadata was deleted")

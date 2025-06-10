@@ -342,7 +342,8 @@ func (h *handlers) ListBucketsForReplication(ctx context.Context, req *pb.ListBu
 		if errors.Is(err, dom.ErrRoutingBlock) {
 			continue
 		}
-		exists, err := h.policySvc.IsReplicationPolicyExists(ctx, req.User, bucket.Name, req.From, req.To, nil)
+		replID := policy.ReplicationID{User: req.User, Bucket: bucket.Name, From: req.From, To: req.To}
+		exists, err := h.policySvc.IsReplicationPolicyExists(ctx, replID)
 		if err != nil {
 			return nil, err
 		}
@@ -419,7 +420,8 @@ func (h *handlers) AddReplication(ctx context.Context, req *pb.AddReplicationReq
 
 		// create policies:
 		for _, bucket := range req.Buckets {
-			err = h.policySvc.AddBucketReplicationPolicy(ctx, req.User, bucket, req.From, req.To, nil, tasks.PriorityDefault1, req.AgentUrl)
+			replID := policy.ReplicationID{User: req.User, Bucket: bucket, From: req.From, To: req.To}
+			err = h.policySvc.AddBucketReplicationPolicy(ctx, replID, tasks.PriorityDefault1, req.AgentUrl)
 			if err != nil {
 				if errors.Is(err, dom.ErrAlreadyExists) {
 					continue
@@ -480,7 +482,8 @@ func (h *handlers) addUserReplication(ctx context.Context, req *pb.AddReplicatio
 		return err
 	}
 	for _, bucket := range buckets {
-		err = h.policySvc.AddBucketReplicationPolicy(ctx, req.User, bucket.Name, req.From, req.To, nil, tasks.PriorityDefault1, nil)
+		replID := policy.ReplicationID{User: req.User, Bucket: bucket.Name, From: req.From, To: req.To}
+		err = h.policySvc.AddBucketReplicationPolicy(ctx, replID, tasks.PriorityDefault1, nil)
 		if err != nil {
 			if errors.Is(err, dom.ErrAlreadyExists) {
 				continue
@@ -584,7 +587,8 @@ func (h *handlers) DeleteUserReplication(ctx context.Context, req *pb.DeleteUser
 }
 
 func (h *handlers) PauseReplication(ctx context.Context, req *pb.ReplicationRequest) (*emptypb.Empty, error) {
-	err := h.policySvc.PauseReplication(ctx, req.User, req.Bucket, req.From, req.To, req.ToBucket)
+	replID := policy.ReplicationID{User: req.User, Bucket: req.Bucket, From: req.From, To: req.To, ToBucket: req.ToBucket}
+	err := h.policySvc.PauseReplication(ctx, replID)
 	if err != nil {
 		return nil, err
 	}
@@ -592,7 +596,8 @@ func (h *handlers) PauseReplication(ctx context.Context, req *pb.ReplicationRequ
 }
 
 func (h *handlers) ResumeReplication(ctx context.Context, req *pb.ReplicationRequest) (*emptypb.Empty, error) {
-	err := h.policySvc.ResumeReplication(ctx, req.User, req.Bucket, req.From, req.To, req.ToBucket)
+	replID := policy.ReplicationID{User: req.User, Bucket: req.Bucket, From: req.From, To: req.To, ToBucket: req.ToBucket}
+	err := h.policySvc.ResumeReplication(ctx, replID)
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +612,8 @@ func (h *handlers) DeleteReplication(ctx context.Context, req *pb.ReplicationReq
 	}
 	defer release()
 	err = lock.WithRefresh(ctx, func() error {
-		err = h.policySvc.DeleteReplication(ctx, req.User, req.Bucket, req.From, req.To, req.ToBucket)
+		replID := policy.ReplicationID{User: req.User, Bucket: req.Bucket, From: req.From, To: req.To, ToBucket: req.ToBucket}
+		err = h.policySvc.DeleteReplication(ctx, replID)
 		if err != nil {
 			return fmt.Errorf("%w: unable to delete replication policy", err)
 		}
@@ -669,7 +675,8 @@ func (h *handlers) StreamBucketReplication(req *pb.ReplicationRequest, server pb
 		case <-ctx.Done():
 			return nil
 		case <-timer.C:
-			m, err := h.policySvc.GetReplicationPolicyInfo(ctx, req.User, req.Bucket, req.From, req.To, req.ToBucket)
+			replID := policy.ReplicationID{User: req.User, Bucket: req.Bucket, From: req.From, To: req.To, ToBucket: req.ToBucket}
+			m, err := h.policySvc.GetReplicationPolicyInfo(ctx, replID)
 			if err != nil {
 				return err
 			}
@@ -746,7 +753,8 @@ func (h *handlers) AddBucketReplication(ctx context.Context, req *pb.AddBucketRe
 		}
 
 		// create policy:
-		err = h.policySvc.AddBucketReplicationPolicy(ctx, req.User, req.FromBucket, req.FromStorage, req.ToStorage, req.ToBucket, tasks.PriorityDefault1, req.AgentUrl)
+		replID := policy.ReplicationID{User: req.User, Bucket: req.FromBucket, From: req.FromStorage, To: req.ToStorage, ToBucket: req.ToBucket}
+		err = h.policySvc.AddBucketReplicationPolicy(ctx, replID, tasks.PriorityDefault1, req.AgentUrl)
 		if err != nil {
 			return err
 		}
@@ -811,7 +819,8 @@ func (h *handlers) createAgentBucketNotification(ctx context.Context, user, from
 	// create a topic and bucket notification for agent event source.
 	err := h.notificationSvc.SubscribeToBucketNotifications(ctx, fromStorage, user, fromBucket, *agentURL)
 	if err != nil {
-		cleanupErr := h.policySvc.DeleteReplication(context.Background(), user, fromBucket, fromStorage, toStorage, toBucket)
+		replID := policy.ReplicationID{User: user, Bucket: fromBucket, From: fromStorage, To: toStorage, ToBucket: toBucket}
+		cleanupErr := h.policySvc.DeleteReplication(context.Background(), replID)
 		if cleanupErr != nil {
 			zerolog.Ctx(ctx).Err(cleanupErr).Msgf("unable to cleanup replication policy for bucket %s", fromBucket)
 		}
@@ -822,7 +831,8 @@ func (h *handlers) createAgentBucketNotification(ctx context.Context, user, from
 
 func (h *handlers) GetReplication(ctx context.Context, req *pb.ReplicationRequest) (*pb.Replication, error) {
 	ctx = log.WithUser(ctx, req.User)
-	status, err := h.policySvc.GetReplicationPolicyInfo(ctx, req.User, req.Bucket, req.From, req.To, req.ToBucket)
+	replID := policy.ReplicationID{User: req.User, Bucket: req.Bucket, From: req.From, To: req.To, ToBucket: req.ToBucket}
+	status, err := h.policySvc.GetReplicationPolicyInfo(ctx, replID)
 	if err != nil {
 		return nil, err
 	}

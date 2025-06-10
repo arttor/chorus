@@ -219,19 +219,32 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		_, err = svc.GetUserReplicationPolicies(ctx, "a")
 		r.NoError(err)
 
-		err = svc.AddBucketReplicationPolicy(ctx, "", "a", "a", "a", nil, tasks.Priority3, nil)
+		invalidReplID1 := ReplicationID{User: "", Bucket: "a", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID1, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "", "a", "a", nil, tasks.Priority3, nil)
+		
+		invalidReplID2 := ReplicationID{User: "a", Bucket: "", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID2, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "", "a", nil, tasks.Priority3, nil)
+		
+		invalidReplID3 := ReplicationID{User: "a", Bucket: "a", From: "", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID3, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "", nil, tasks.Priority3, nil)
+		
+		invalidReplID4 := ReplicationID{User: "a", Bucket: "a", From: "a", To: ""}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID4, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "a", nil, tasks.Priority(69), nil)
+		
+		invalidPriorityReplID := ReplicationID{User: "a", Bucket: "a", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidPriorityReplID, tasks.Priority(69), nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "a", nil, tasks.Priority3, nil)
+		
+		sameFromToReplID := ReplicationID{User: "a", Bucket: "a", From: "a", To: "a"}
+		err = svc.AddBucketReplicationPolicy(ctx, sameFromToReplID, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.AddBucketReplicationPolicy(ctx, "a", "a", "a", "b", nil, tasks.Priority3, nil)
+		
+		validReplID := ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"}
+		err = svc.AddBucketReplicationPolicy(ctx, validReplID, tasks.Priority3, nil)
 		r.NoError(err)
 
 		_, err = svc.GetBucketReplicationPolicies(ctx, "", "")
@@ -243,96 +256,96 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		_, err = svc.GetBucketReplicationPolicies(ctx, "a", "a")
 		r.NoError(err)
 
-		_, err = svc.GetReplicationPolicyInfo(ctx, "", "a", "a", "a", nil)
+		_, err = svc.GetReplicationPolicyInfo(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.GetReplicationPolicyInfo(ctx, "a", "", "a", "a", nil)
+		_, err = svc.GetReplicationPolicyInfo(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.GetReplicationPolicyInfo(ctx, "a", "a", "", "a", nil)
+		_, err = svc.GetReplicationPolicyInfo(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.GetReplicationPolicyInfo(ctx, "a", "a", "a", "", nil)
+		_, err = svc.GetReplicationPolicyInfo(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.GetReplicationPolicyInfo(ctx, "a", "a", "a", "b", nil)
+		_, err = svc.GetReplicationPolicyInfo(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"})
 		r.NoError(err)
 
-		_, err = svc.IsReplicationPolicyPaused(ctx, "", "a", "a", "a", nil)
+		_, err = svc.IsReplicationPolicyPaused(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.IsReplicationPolicyPaused(ctx, "a", "", "a", "a", nil)
+		_, err = svc.IsReplicationPolicyPaused(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.IsReplicationPolicyPaused(ctx, "a", "a", "", "a", nil)
+		_, err = svc.IsReplicationPolicyPaused(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.IsReplicationPolicyPaused(ctx, "a", "a", "a", "", nil)
+		_, err = svc.IsReplicationPolicyPaused(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		_, err = svc.IsReplicationPolicyPaused(ctx, "a", "a", "a", "b", nil)
+		_, err = svc.IsReplicationPolicyPaused(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"})
 		r.NoError(err)
 
-		err = svc.IncReplInitObjListed(ctx, "", "a", "a", "a", nil, 0, time.Now())
+		err = svc.IncReplInitObjListed(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjListed(ctx, "a", "", "a", "a", nil, 0, time.Now())
+		err = svc.IncReplInitObjListed(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjListed(ctx, "a", "a", "", "a", nil, 0, time.Now())
+		err = svc.IncReplInitObjListed(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjListed(ctx, "a", "a", "a", "", nil, 0, time.Now())
+		err = svc.IncReplInitObjListed(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjListed(ctx, "a", "a", "a", "a", nil, -1, time.Now())
+		err = svc.IncReplInitObjListed(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "a"}, -1, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjListed(ctx, "a", "a", "a", "b", nil, 0, time.Now())
+		err = svc.IncReplInitObjListed(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"}, 0, time.Now())
 		r.NoError(err)
 
-		err = svc.IncReplInitObjDone(ctx, "", "a", "a", "a", nil, 0, time.Now())
+		err = svc.IncReplInitObjDone(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjDone(ctx, "a", "", "a", "a", nil, 0, time.Now())
+		err = svc.IncReplInitObjDone(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjDone(ctx, "a", "a", "", "a", nil, 0, time.Now())
+		err = svc.IncReplInitObjDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjDone(ctx, "a", "a", "a", "", nil, 0, time.Now())
+		err = svc.IncReplInitObjDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""}, 0, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjDone(ctx, "a", "a", "a", "a", nil, -1, time.Now())
+		err = svc.IncReplInitObjDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "a"}, -1, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplInitObjDone(ctx, "a", "a", "a", "b", nil, 0, time.Now())
+		err = svc.IncReplInitObjDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"}, 0, time.Now())
 		r.NoError(err)
 
-		err = svc.IncReplEvents(ctx, "", "a", "a", "a", nil, time.Now())
+		err = svc.IncReplEvents(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEvents(ctx, "a", "", "a", "a", nil, time.Now())
+		err = svc.IncReplEvents(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEvents(ctx, "a", "a", "", "a", nil, time.Now())
+		err = svc.IncReplEvents(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEvents(ctx, "a", "a", "a", "", nil, time.Now())
+		err = svc.IncReplEvents(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEvents(ctx, "a", "a", "a", "b", nil, time.Now())
+		err = svc.IncReplEvents(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"}, time.Now())
 		r.NoError(err)
 
-		err = svc.IncReplEventsDone(ctx, "", "a", "a", "a", nil, time.Now())
+		err = svc.IncReplEventsDone(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEventsDone(ctx, "a", "", "a", "a", nil, time.Now())
+		err = svc.IncReplEventsDone(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEventsDone(ctx, "a", "a", "", "a", nil, time.Now())
+		err = svc.IncReplEventsDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEventsDone(ctx, "a", "a", "a", "", nil, time.Now())
+		err = svc.IncReplEventsDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""}, time.Now())
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.IncReplEventsDone(ctx, "a", "a", "a", "b", nil, time.Now())
+		err = svc.IncReplEventsDone(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"}, time.Now())
 		r.NoError(err)
 
-		err = svc.PauseReplication(ctx, "", "a", "a", "a", nil)
+		err = svc.PauseReplication(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.PauseReplication(ctx, "a", "", "a", "a", nil)
+		err = svc.PauseReplication(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.PauseReplication(ctx, "a", "a", "", "a", nil)
+		err = svc.PauseReplication(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.PauseReplication(ctx, "a", "a", "a", "", nil)
+		err = svc.PauseReplication(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.PauseReplication(ctx, "a", "a", "a", "b", nil)
+		err = svc.PauseReplication(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"})
 		r.NoError(err)
 
-		err = svc.ResumeReplication(ctx, "", "a", "a", "a", nil)
+		err = svc.ResumeReplication(ctx, ReplicationID{User: "", Bucket: "a", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.ResumeReplication(ctx, "a", "", "a", "a", nil)
+		err = svc.ResumeReplication(ctx, ReplicationID{User: "a", Bucket: "", From: "a", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.ResumeReplication(ctx, "a", "a", "", "a", nil)
+		err = svc.ResumeReplication(ctx, ReplicationID{User: "a", Bucket: "a", From: "", To: "a"})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.ResumeReplication(ctx, "a", "a", "a", "", nil)
+		err = svc.ResumeReplication(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: ""})
 		r.ErrorIs(err, dom.ErrInvalidArg)
-		err = svc.ResumeReplication(ctx, "a", "a", "a", "b", nil)
+		err = svc.ResumeReplication(ctx, ReplicationID{User: "a", Bucket: "a", From: "a", To: "b"})
 		r.NoError(err)
 	})
 
@@ -345,26 +358,26 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 			for _, b := range buckets {
 				_, err = svc.GetBucketReplicationPolicies(ctx, u, b)
 				r.ErrorIs(err, dom.ErrNotFound)
-				_, err = svc.GetReplicationPolicyInfo(ctx, u, b, s1, s2, nil)
+				_, err = svc.GetReplicationPolicyInfo(ctx, ReplicationID{User: u, Bucket: b, From: s1, To: s2})
 				r.ErrorIs(err, dom.ErrNotFound)
-				exists, err := svc.IsReplicationPolicyExists(ctx, u, b, s1, s2, nil)
+				exists, err := svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u, Bucket: b, From: s1, To: s2})
 				r.NoError(err)
 				r.False(exists)
-				_, err = svc.IsReplicationPolicyPaused(ctx, u, b, s1, s2, nil)
+				_, err = svc.IsReplicationPolicyPaused(ctx, ReplicationID{User: u, Bucket: b, From: s1, To: s2})
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.IncReplEvents(ctx, u, b, s1, s2, nil, time.Now())
+				err = svc.IncReplEvents(ctx, ReplicationID{User: u, Bucket: b, From: s1, To: s2}, time.Now())
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.IncReplEventsDone(ctx, u, b, s1, s2, nil, time.Now())
+				err = svc.IncReplEventsDone(ctx, ReplicationID{User: u, Bucket: b, From: s1, To: s2}, time.Now())
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.IncReplInitObjListed(ctx, u, b, s1, s2, nil, 5, time.Now())
+				err = svc.IncReplInitObjListed(ctx, ReplicationID{User: u, Bucket: b, From: s1, To: s2}, 5, time.Now())
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.IncReplInitObjDone(ctx, u, b, s3, s4, nil, 5, time.Now())
+				err = svc.IncReplInitObjDone(ctx, ReplicationID{User: u, Bucket: b, From: s3, To: s4}, 5, time.Now())
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.PauseReplication(ctx, u, b, s3, s4, nil)
+				err = svc.PauseReplication(ctx, ReplicationID{User: u, Bucket: b, From: s3, To: s4})
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.ResumeReplication(ctx, u, b, s3, s4, nil)
+				err = svc.ResumeReplication(ctx, ReplicationID{User: u, Bucket: b, From: s3, To: s4})
 				r.ErrorIs(err, dom.ErrNotFound)
-				err = svc.ObjListStarted(ctx, u, b, s3, s4, nil)
+				err = svc.ObjListStarted(ctx, ReplicationID{User: u, Bucket: b, From: s3, To: s4})
 				r.ErrorIs(err, dom.ErrNotFound)
 			}
 		}
@@ -426,16 +439,17 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		_, err := svc.GetBucketReplicationPolicies(ctx, u1, b1)
 		r.ErrorIs(err, dom.ErrNotFound)
 
-		_, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		replID := ReplicationID{User: u1, Bucket: b1, From: s1, To: s2}
+		_, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.ErrorIs(err, dom.ErrNotFound)
-		exists, err := svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s2, nil)
+		exists, err := svc.IsReplicationPolicyExists(ctx, replID)
 		r.NoError(err)
 		r.False(exists)
 		list, err := svc.ListReplicationPolicyInfo(ctx)
 		r.NoError(err)
 		r.Empty(list)
 
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s2, nil, tasks.Priority3, nil)
+		err = svc.AddBucketReplicationPolicy(ctx, replID, tasks.Priority3, nil)
 		r.NoError(err)
 
 		res, err := svc.GetBucketReplicationPolicies(ctx, u1, b1)
@@ -444,7 +458,7 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Len(res.To, 1)
 		r.EqualValues(tasks.Priority3, res.To[ReplicationPolicyDest(s2)])
 
-		info, err := svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		info, err := svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.False(info.CreatedAt.IsZero())
 		r.False(info.IsPaused)
@@ -455,7 +469,7 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Zero(info.Events)
 		r.Zero(info.EventsDone)
 
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s2, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, replID)
 		r.NoError(err)
 		r.True(exists)
 
@@ -468,12 +482,15 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.EqualValues(s1, list[0].From)
 		r.EqualValues(s2, list[0].To)
 
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s2, nil, tasks.Priority3, nil)
+		err = svc.AddBucketReplicationPolicy(ctx, replID, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrAlreadyExists)
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b1, s2, s1, nil, tasks.Priority3, nil)
+		
+		invalidReplID2 := ReplicationID{User: u1, Bucket: b1, From: s2, To: s1}
+		err = svc.AddBucketReplicationPolicy(ctx, invalidReplID2, tasks.Priority3, nil)
 		r.ErrorIs(err, dom.ErrInvalidArg)
 
-		err = svc.AddBucketReplicationPolicy(ctx, u2, b1, s2, s1, nil, tasks.PriorityDefault1, nil)
+		replID2 := ReplicationID{User: u2, Bucket: b1, From: s2, To: s1}
+		err = svc.AddBucketReplicationPolicy(ctx, replID2, tasks.PriorityDefault1, nil)
 		r.NoError(err)
 		res, err = svc.GetBucketReplicationPolicies(ctx, u2, b1)
 		r.NoError(err)
@@ -481,7 +498,8 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Len(res.To, 1)
 		r.EqualValues(tasks.PriorityDefault1, res.To[ReplicationPolicyDest(s1)])
 
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b2, s2, s1, nil, tasks.PriorityHighest5, nil)
+		replID3 := ReplicationID{User: u1, Bucket: b2, From: s2, To: s1}
+		err = svc.AddBucketReplicationPolicy(ctx, replID3, tasks.PriorityHighest5, nil)
 		r.NoError(err)
 		res, err = svc.GetBucketReplicationPolicies(ctx, u1, b2)
 		r.NoError(err)
@@ -489,7 +507,8 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Len(res.To, 1)
 		r.EqualValues(tasks.PriorityHighest5, res.To[ReplicationPolicyDest(s1)])
 
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s3, nil, tasks.Priority4, nil)
+		replID4 := ReplicationID{User: u1, Bucket: b1, From: s1, To: s3}
+		err = svc.AddBucketReplicationPolicy(ctx, replID4, tasks.Priority4, nil)
 		r.NoError(err)
 		res, err = svc.GetBucketReplicationPolicies(ctx, u1, b1)
 		r.NoError(err)
@@ -502,20 +521,20 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.NoError(err)
 		r.Len(list, 4)
 
-		pol, err := svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		pol, err := svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.False(pol.ListingStarted)
-		err = svc.ObjListStarted(ctx, u1, b1, s1, s2, nil)
+		err = svc.ObjListStarted(ctx, replID)
 		r.NoError(err)
-		pol, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		pol, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.True(pol.ListingStarted)
 
-		err = svc.DeleteReplication(ctx, u1, b1, s1, s2, nil)
+		err = svc.DeleteReplication(ctx, replID)
 		r.NoError(err)
-		_, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		_, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.ErrorIs(err, dom.ErrNotFound)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s2, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, replID)
 		r.NoError(err)
 		r.False(exists)
 		list, err = svc.ListReplicationPolicyInfo(ctx)
@@ -528,7 +547,8 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r := require.New(t)
 		db.FlushAll()
 
-		err := svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s2, nil, tasks.Priority3, nil)
+		replID := ReplicationID{User: u1, Bucket: b1, From: s1, To: s2}
+		err := svc.AddBucketReplicationPolicy(ctx, replID, tasks.Priority3, nil)
 		r.NoError(err)
 
 		res, err := svc.GetBucketReplicationPolicies(ctx, u1, b1)
@@ -537,7 +557,7 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Len(res.To, 1)
 		r.EqualValues(tasks.Priority3, res.To[ReplicationPolicyDest(s2)])
 
-		info, err := svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		info, err := svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.False(info.CreatedAt.IsZero())
 		r.False(info.IsPaused)
@@ -549,9 +569,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Zero(info.EventsDone)
 
 		now := time.Now()
-		err = svc.IncReplInitObjListed(ctx, u1, b1, s1, s2, nil, 69, now)
+		err = svc.IncReplInitObjListed(ctx, replID, 69, now)
 		r.NoError(err)
-		infoUpd, err := svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err := svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -563,9 +583,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Zero(infoUpd.EventsDone)
 		r.Nil(infoUpd.InitDoneAt)
 
-		err = svc.IncReplInitObjDone(ctx, u1, b1, s1, s2, nil, 13, now)
+		err = svc.IncReplInitObjDone(ctx, replID, 13, now)
 		r.NoError(err)
-		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -582,9 +602,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 
 		before := now.Add(-time.Hour)
 
-		err = svc.IncReplInitObjDone(ctx, u1, b1, s1, s2, nil, 7, before)
+		err = svc.IncReplInitObjDone(ctx, replID, 7, before)
 		r.NoError(err)
-		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -597,9 +617,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.NotNil(infoUpd.LastProcessedAt)
 		r.EqualValues(now.UTC().UnixMicro(), infoUpd.LastProcessedAt.UTC().UnixMicro())
 
-		err = svc.IncReplEvents(ctx, u1, b1, s1, s2, nil, now) //??
+		err = svc.IncReplEvents(ctx, replID, now) //??
 		r.NoError(err)
-		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -611,9 +631,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Zero(infoUpd.EventsDone)
 
 		after := now.Add(time.Minute)
-		err = svc.IncReplEvents(ctx, u1, b1, s1, s2, nil, after)
+		err = svc.IncReplEvents(ctx, replID, after)
 		r.NoError(err)
-		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -624,9 +644,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.EqualValues(2, infoUpd.Events)
 		r.Zero(infoUpd.EventsDone)
 
-		err = svc.IncReplEventsDone(ctx, u1, b1, s1, s2, nil, after)
+		err = svc.IncReplEventsDone(ctx, replID, after)
 		r.NoError(err)
-		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -640,9 +660,9 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.EqualValues(after.UnixMicro(), infoUpd.LastProcessedAt.UnixMicro())
 
 		afterAfter := after.Add(time.Minute)
-		err = svc.IncReplEventsDone(ctx, u1, b1, s1, s2, nil, afterAfter)
+		err = svc.IncReplEventsDone(ctx, replID, afterAfter)
 		r.NoError(err)
-		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		infoUpd, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.EqualValues(info.CreatedAt, infoUpd.CreatedAt)
 		r.False(infoUpd.IsPaused)
@@ -663,7 +683,8 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r := require.New(t)
 		db.FlushAll()
 
-		err := svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s2, nil, tasks.Priority3, nil)
+		replID := ReplicationID{User: u1, Bucket: b1, From: s1, To: s2}
+		err := svc.AddBucketReplicationPolicy(ctx, replID, tasks.Priority3, nil)
 		r.NoError(err)
 
 		res, err := svc.GetBucketReplicationPolicies(ctx, u1, b1)
@@ -672,7 +693,7 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Len(res.To, 1)
 		r.EqualValues(tasks.Priority3, res.To[ReplicationPolicyDest(s2)])
 
-		info, err := svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		info, err := svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.False(info.CreatedAt.IsZero())
 		r.False(info.IsPaused)
@@ -683,10 +704,10 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Zero(info.Events)
 		r.Zero(info.EventsDone)
 
-		err = svc.PauseReplication(ctx, u1, b1, s1, s2, nil)
+		err = svc.PauseReplication(ctx, replID)
 		r.NoError(err)
 
-		info, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		info, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.True(info.IsPaused)
 		r.Zero(info.InitObjListed)
@@ -696,10 +717,10 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.Zero(info.Events)
 		r.Zero(info.EventsDone)
 
-		err = svc.ResumeReplication(ctx, u1, b1, s1, s2, nil)
+		err = svc.ResumeReplication(ctx, replID)
 		r.NoError(err)
 
-		info, err = svc.GetReplicationPolicyInfo(ctx, u1, b1, s1, s2, nil)
+		info, err = svc.GetReplicationPolicyInfo(ctx, replID)
 		r.NoError(err)
 		r.False(info.IsPaused)
 		r.Zero(info.InitObjListed)
@@ -751,25 +772,25 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		res, err = svc.GetUserReplicationPolicies(ctx, u1)
 		r.ErrorIs(err, dom.ErrNotFound)
 
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s2, nil, tasks.Priority4, nil)
+		err = svc.AddBucketReplicationPolicy(ctx, ReplicationID{User: u1, Bucket: b1, From: s1, To: s2}, tasks.Priority4, nil)
 		r.NoError(err)
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b2, s1, s2, nil, tasks.Priority4, nil)
+		err = svc.AddBucketReplicationPolicy(ctx, ReplicationID{User: u1, Bucket: b2, From: s1, To: s2}, tasks.Priority4, nil)
 		r.NoError(err)
-		err = svc.AddBucketReplicationPolicy(ctx, u1, b1, s1, s3, nil, tasks.Priority4, nil)
+		err = svc.AddBucketReplicationPolicy(ctx, ReplicationID{User: u1, Bucket: b1, From: s1, To: s3}, tasks.Priority4, nil)
 		r.NoError(err)
-		err = svc.AddBucketReplicationPolicy(ctx, u2, b1, s1, s3, nil, tasks.Priority4, nil)
+		err = svc.AddBucketReplicationPolicy(ctx, ReplicationID{User: u2, Bucket: b1, From: s1, To: s3}, tasks.Priority4, nil)
 		r.NoError(err)
 
-		exists, err := svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s2, nil)
+		exists, err := svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u1, Bucket: b1, From: s1, To: s2})
 		r.NoError(err)
 		r.True(exists)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b2, s1, s2, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u1, Bucket: b2, From: s1, To: s2})
 		r.NoError(err)
 		r.True(exists)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s3, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u1, Bucket: b1, From: s1, To: s3})
 		r.NoError(err)
 		r.True(exists)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u2, b1, s1, s3, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u2, Bucket: b1, From: s1, To: s3})
 		r.NoError(err)
 		r.True(exists)
 
@@ -777,16 +798,16 @@ func Test_policySvc_BucketReplicationPolicies(t *testing.T) {
 		r.NoError(err)
 		r.NotEmpty(deleted)
 
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s2, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u1, Bucket: b1, From: s1, To: s2})
 		r.NoError(err)
 		r.False(exists)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b2, s1, s2, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u1, Bucket: b2, From: s1, To: s2})
 		r.NoError(err)
 		r.False(exists)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u1, b1, s1, s3, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u1, Bucket: b1, From: s1, To: s3})
 		r.NoError(err)
 		r.True(exists)
-		exists, err = svc.IsReplicationPolicyExists(ctx, u2, b1, s1, s3, nil)
+		exists, err = svc.IsReplicationPolicyExists(ctx, ReplicationID{User: u2, Bucket: b1, From: s1, To: s3})
 		r.NoError(err)
 		r.True(exists)
 	})
@@ -808,16 +829,19 @@ func Test_CustomDestBucket(t *testing.T) {
 	r.NoError(svc.AddUserRoutingPolicy(ctx, user, stor), "route to main storage")
 
 	// validate policy creation
-	err := svc.AddBucketReplicationPolicy(ctx, user, srcBuck, stor, stor, &srcBuck, tasks.Priority3, nil)
+	invalidReplID := ReplicationID{User: user, Bucket: srcBuck, From: stor, To: stor, ToBucket: &srcBuck}
+	err := svc.AddBucketReplicationPolicy(ctx, invalidReplID, tasks.Priority3, nil)
 	r.ErrorIs(err, dom.ErrInvalidArg, "repl to same storage and bucket is not allowed")
 
-	err = svc.AddBucketReplicationPolicy(ctx, user, srcBuck, stor, stor, &dstBuck, tasks.Priority3, nil)
+	validReplID1 := ReplicationID{User: user, Bucket: srcBuck, From: stor, To: stor, ToBucket: &dstBuck}
+	err = svc.AddBucketReplicationPolicy(ctx, validReplID1, tasks.Priority3, nil)
 	r.NoError(err, dom.ErrInvalidArg, "repl to same storage but different bucket is allowed")
 
-	err = svc.AddBucketReplicationPolicy(ctx, user, srcBuck, stor, stor2, &dstBuck, tasks.Priority2, nil)
+	validReplID2 := ReplicationID{User: user, Bucket: srcBuck, From: stor, To: stor2, ToBucket: &dstBuck}
+	err = svc.AddBucketReplicationPolicy(ctx, validReplID2, tasks.Priority2, nil)
 	r.NoError(err, dom.ErrInvalidArg, "repl to different storage and different bucket is allowed")
 
-	err = svc.AddBucketReplicationPolicy(ctx, user, srcBuck, stor, stor2, &dstBuck, tasks.Priority2, nil)
+	err = svc.AddBucketReplicationPolicy(ctx, validReplID2, tasks.Priority2, nil)
 	r.Error(err, "already exists")
 
 	// check replication lookup
@@ -834,7 +858,7 @@ func Test_CustomDestBucket(t *testing.T) {
 	_, err = svc.GetRoutingPolicy(ctx, user, dstBuck)
 	r.ErrorIs(err, dom.ErrRoutingBlock, "for dst bucket routing is blocked")
 
-	_, err = svc.GetReplicationPolicyInfo(ctx, user, srcBuck, stor, stor, &dstBuck)
+	_, err = svc.GetReplicationPolicyInfo(ctx, validReplID1)
 	r.NoError(err, "info created")
 
 	list, err := svc.ListReplicationPolicyInfo(ctx)
@@ -854,27 +878,27 @@ func Test_CustomDestBucket(t *testing.T) {
 		}
 	}
 
-	ok, err := svc.IsReplicationPolicyExists(ctx, user, srcBuck, stor, stor, &dstBuck)
+	ok, err := svc.IsReplicationPolicyExists(ctx, validReplID1)
 	r.NoError(err)
 	r.True(ok)
 
 	// check pause/resume:
-	ok, err = svc.IsReplicationPolicyPaused(ctx, user, srcBuck, stor, stor, &dstBuck)
+	ok, err = svc.IsReplicationPolicyPaused(ctx, validReplID1)
 	r.NoError(err)
 	r.False(ok)
-	err = svc.PauseReplication(ctx, user, srcBuck, stor, stor, &dstBuck)
+	err = svc.PauseReplication(ctx, validReplID1)
 	r.NoError(err)
-	ok, err = svc.IsReplicationPolicyPaused(ctx, user, srcBuck, stor, stor, &dstBuck)
+	ok, err = svc.IsReplicationPolicyPaused(ctx, validReplID1)
 	r.NoError(err)
 	r.True(ok)
-	err = svc.ResumeReplication(ctx, user, srcBuck, stor, stor, &dstBuck)
+	err = svc.ResumeReplication(ctx, validReplID1)
 	r.NoError(err)
-	ok, err = svc.IsReplicationPolicyPaused(ctx, user, srcBuck, stor, stor, &dstBuck)
+	ok, err = svc.IsReplicationPolicyPaused(ctx, validReplID1)
 	r.NoError(err)
 	r.False(ok)
 
 	// check replication counters
-	info, err := svc.GetReplicationPolicyInfo(ctx, user, srcBuck, stor, stor, &dstBuck)
+	info, err := svc.GetReplicationPolicyInfo(ctx, validReplID1)
 	r.NoError(err)
 	r.False(info.CreatedAt.IsZero())
 	r.False(info.IsPaused)
@@ -888,19 +912,19 @@ func Test_CustomDestBucket(t *testing.T) {
 	r.Nil(info.LastProcessedAt)
 
 	eventTime := time.Now()
-	err = svc.IncReplInitObjListed(ctx, user, srcBuck, stor, stor, &dstBuck, 69, eventTime)
+	err = svc.IncReplInitObjListed(ctx, validReplID1, 69, eventTime)
 	r.NoError(err)
-	err = svc.IncReplInitObjDone(ctx, user, srcBuck, stor, stor, &dstBuck, 69, eventTime)
-	r.NoError(err)
-
-	err = svc.IncReplEvents(ctx, user, srcBuck, stor, stor, &dstBuck, eventTime)
-	r.NoError(err)
-	err = svc.IncReplEvents(ctx, user, srcBuck, stor, stor, &dstBuck, eventTime)
-	r.NoError(err)
-	err = svc.IncReplEventsDone(ctx, user, srcBuck, stor, stor, &dstBuck, eventTime)
+	err = svc.IncReplInitObjDone(ctx, validReplID1, 69, eventTime)
 	r.NoError(err)
 
-	info, err = svc.GetReplicationPolicyInfo(ctx, user, srcBuck, stor, stor, &dstBuck)
+	err = svc.IncReplEvents(ctx, validReplID1, eventTime)
+	r.NoError(err)
+	err = svc.IncReplEvents(ctx, validReplID1, eventTime)
+	r.NoError(err)
+	err = svc.IncReplEventsDone(ctx, validReplID1, eventTime)
+	r.NoError(err)
+
+	info, err = svc.GetReplicationPolicyInfo(ctx, validReplID1)
 	r.NoError(err)
 	r.EqualValues(1, info.InitObjListed)
 	r.EqualValues(1, info.InitObjDone)
@@ -912,11 +936,11 @@ func Test_CustomDestBucket(t *testing.T) {
 	r.NotNil(info.LastProcessedAt)
 
 	// delete replication
-	err = svc.DeleteReplication(ctx, user, srcBuck, stor, stor, &dstBuck)
+	err = svc.DeleteReplication(ctx, validReplID1)
 	r.NoError(err)
 
 	// verify deletion
-	info, err = svc.GetReplicationPolicyInfo(ctx, user, srcBuck, stor, stor, &dstBuck)
+	info, err = svc.GetReplicationPolicyInfo(ctx, validReplID1)
 	r.ErrorIs(err, dom.ErrNotFound)
 
 	list, err = svc.ListReplicationPolicyInfo(ctx)
@@ -924,7 +948,7 @@ func Test_CustomDestBucket(t *testing.T) {
 	r.Len(list, 1)
 	r.EqualValues(stor2, list[0].To)
 
-	ok, err = svc.IsReplicationPolicyExists(ctx, user, srcBuck, stor, stor, &dstBuck)
+	ok, err = svc.IsReplicationPolicyExists(ctx, validReplID1)
 	r.NoError(err)
 	r.False(ok)
 
