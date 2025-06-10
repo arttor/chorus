@@ -106,7 +106,8 @@ func createReplication(
 		return err
 	}
 	for _, bucket := range buckets {
-		err = policySvc.AddBucketReplicationPolicy(ctx, user, bucket.Name, from, to, nil, tasks.PriorityDefault1, nil)
+		replID := policy.ReplicationID{User: user, Bucket: bucket.Name, From: from, To: to}
+		err = policySvc.AddBucketReplicationPolicy(ctx, replID, tasks.PriorityDefault1, nil)
 		if err != nil {
 			if errors.Is(err, dom.ErrAlreadyExists) {
 				continue
