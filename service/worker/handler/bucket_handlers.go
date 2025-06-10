@@ -31,6 +31,7 @@ import (
 	"github.com/clyso/chorus/pkg/dom"
 	"github.com/clyso/chorus/pkg/features"
 	"github.com/clyso/chorus/pkg/log"
+	"github.com/clyso/chorus/pkg/policy"
 	"github.com/clyso/chorus/pkg/s3client"
 	"github.com/clyso/chorus/pkg/tasks"
 )
@@ -43,7 +44,8 @@ func (s *svc) HandleBucketCreate(ctx context.Context, t *asynq.Task) (err error)
 	ctx = log.WithBucket(ctx, p.Bucket)
 	logger := zerolog.Ctx(ctx)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -268,7 +270,8 @@ func (s *svc) HandleBucketDelete(ctx context.Context, t *asynq.Task) (err error)
 	}
 	ctx = log.WithBucket(ctx, p.Bucket)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -289,7 +292,7 @@ func (s *svc) HandleBucketDelete(ctx context.Context, t *asynq.Task) (err error)
 		if err != nil {
 			return
 		}
-		verErr := s.policySvc.IncReplEventsDone(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, p.CreatedAt)
+		verErr := s.policySvc.IncReplEventsDone(ctx, replID, p.CreatedAt)
 		if verErr != nil {
 			zerolog.Ctx(ctx).Err(verErr).Msg("unable to inc processed events")
 		}

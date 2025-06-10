@@ -30,6 +30,7 @@ import (
 	xctx "github.com/clyso/chorus/pkg/ctx"
 	"github.com/clyso/chorus/pkg/dom"
 	"github.com/clyso/chorus/pkg/log"
+	"github.com/clyso/chorus/pkg/policy"
 	"github.com/clyso/chorus/pkg/tasks"
 )
 
@@ -42,7 +43,8 @@ func (s *svc) HandleMigrationBucketListObj(ctx context.Context, t *asynq.Task) e
 	ctx = log.WithBucket(ctx, p.Bucket)
 	logger := zerolog.Ctx(ctx)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -120,7 +122,7 @@ func (s *svc) HandleMigrationBucketListObj(ctx context.Context, t *asynq.Task) e
 			}
 			return fmt.Errorf("migration bucket list obj: unable to enqueue copy obj task: %w", err)
 		}
-		err = s.policySvc.IncReplInitObjListed(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, object.Size, p.GetDate())
+		err = s.policySvc.IncReplInitObjListed(ctx, replID, object.Size, p.GetDate())
 		if err != nil {
 			return fmt.Errorf("migration bucket list obj: unable to inc obj listed meta: %w", err)
 		}
@@ -152,7 +154,7 @@ func (s *svc) HandleMigrationBucketListObj(ctx context.Context, t *asynq.Task) e
 		case err != nil:
 			return fmt.Errorf("migration bucket list obj: unable to enqueue copy obj task: %w", err)
 		default:
-			err = s.policySvc.IncReplInitObjListed(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, 0, p.GetDate())
+			err = s.policySvc.IncReplInitObjListed(ctx, replID, 0, p.GetDate())
 			if err != nil {
 				return fmt.Errorf("migration bucket list obj: unable to inc obj listed meta: %w", err)
 			}
@@ -161,7 +163,7 @@ func (s *svc) HandleMigrationBucketListObj(ctx context.Context, t *asynq.Task) e
 	_ = s.storageSvc.DelLastListedObj(ctx, p)
 
 	if p.Prefix == "" {
-		err = s.policySvc.ObjListStarted(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+		err = s.policySvc.ObjListStarted(ctx, replID)
 		if err != nil {
 			logger.Err(err).Msg("migration bucket list obj: unable to set ObjListStarted")
 		}

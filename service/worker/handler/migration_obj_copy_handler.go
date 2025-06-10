@@ -31,6 +31,7 @@ import (
 	"github.com/clyso/chorus/pkg/lock"
 	"github.com/clyso/chorus/pkg/log"
 	"github.com/clyso/chorus/pkg/meta"
+	"github.com/clyso/chorus/pkg/policy"
 	"github.com/clyso/chorus/pkg/rclone"
 	"github.com/clyso/chorus/pkg/tasks"
 )
@@ -44,7 +45,8 @@ func (s *svc) HandleMigrationObjCopy(ctx context.Context, t *asynq.Task) (err er
 	ctx = log.WithObjName(ctx, p.Obj.Name)
 	logger := zerolog.Ctx(ctx)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -75,7 +77,7 @@ func (s *svc) HandleMigrationObjCopy(ctx context.Context, t *asynq.Task) (err er
 		if err != nil {
 			return
 		}
-		metaErr := s.policySvc.IncReplInitObjDone(ctx, xctx.GetUser(ctx), p.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, p.Obj.Size, p.CreatedAt)
+		metaErr := s.policySvc.IncReplInitObjDone(ctx, replID, p.Obj.Size, p.CreatedAt)
 		if metaErr != nil {
 			logger.Err(metaErr).Msg("migration obj copy: unable to inc obj done meta")
 		}

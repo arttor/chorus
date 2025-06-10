@@ -32,6 +32,7 @@ import (
 	"github.com/clyso/chorus/pkg/lock"
 	"github.com/clyso/chorus/pkg/log"
 	"github.com/clyso/chorus/pkg/meta"
+	"github.com/clyso/chorus/pkg/policy"
 	"github.com/clyso/chorus/pkg/rclone"
 	"github.com/clyso/chorus/pkg/tasks"
 )
@@ -45,7 +46,8 @@ func (s *svc) HandleObjectSync(ctx context.Context, t *asynq.Task) (err error) {
 	ctx = log.WithObjName(ctx, p.Object.Name)
 	logger := zerolog.Ctx(ctx)
 
-	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, xctx.GetUser(ctx), p.Object.Bucket, p.FromStorage, p.ToStorage, p.ToBucket)
+	replID := policy.ReplicationID{User: xctx.GetUser(ctx), Bucket: p.Object.Bucket, From: p.FromStorage, To: p.ToStorage, ToBucket: p.ToBucket}
+	paused, err := s.policySvc.IsReplicationPolicyPaused(ctx, replID)
 	if err != nil {
 		if errors.Is(err, dom.ErrNotFound) {
 			zerolog.Ctx(ctx).Err(err).Msg("drop replication task: replication policy not found")
@@ -69,7 +71,7 @@ func (s *svc) HandleObjectSync(ctx context.Context, t *asynq.Task) (err error) {
 		if err != nil {
 			return
 		}
-		verErr := s.policySvc.IncReplEventsDone(ctx, xctx.GetUser(ctx), p.Object.Bucket, p.FromStorage, p.ToStorage, p.ToBucket, p.CreatedAt)
+		verErr := s.policySvc.IncReplEventsDone(ctx, replID, p.CreatedAt)
 		if verErr != nil {
 			zerolog.Ctx(ctx).Err(verErr).Msg("unable to inc processed events")
 		}
